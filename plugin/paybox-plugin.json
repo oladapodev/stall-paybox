@@ -1,6 +1,6 @@
 {
-  "tool": "search_stalls",
+  "tool": "find_items",
   "arguments": {
-    "query": "ankara"
+    "query": "candle"
   }
 }

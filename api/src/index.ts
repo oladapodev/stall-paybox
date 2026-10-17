@@ -23,8 +23,15 @@ const slugify = (s: string) =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 32) || "stall";
 const usd = (cents: number) => `$${(cents / 100).toFixed(2)}`;
 const atomicToUsd = (a: string) => (Number(BigInt(a)) / 1e6).toFixed(6);
-const waLink = (num: string, text: string) =>
-  `https://wa.me/${num.replace(/[^0-9]/g, "")}?text=${encodeURIComponent(text)}`;
+// Works for any contact a seller gives: email, phone (opens WhatsApp, which works worldwide) or a link.
+const contactLink = (contact: string, text: string) => {
+  const c = String(contact ?? "").trim();
+  if (/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(c)) return `mailto:${c}?subject=${encodeURIComponent("New order")}&body=${encodeURIComponent(text)}`;
+  if (/^https?:\/\//i.test(c)) return c;
+  const digits = c.replace(/[^0-9]/g, "");
+  if (digits.length >= 7) return `https://wa.me/${digits}?text=${encodeURIComponent(text)}`;
+  return "";
+};
 const err = (c: any, status: number, message: string) => c.json({ error: message }, status);
 
 const RPCS = ["https://base-rpc.publicnode.com", "https://mainnet.base.org", "https://base.drpc.org"];
@@ -70,14 +77,15 @@ app.get("/", (c) => c.json({ ok: true, service: "stall", docs: "Agent-shoppable 
 // ---------- seller ----------
 app.post("/stalls", async (c) => {
   const b: any = await c.req.json();
-  if (!b.name || !b.whatsapp || !EVM.test(b.wallet ?? "")) return err(c, 400, "name, whatsapp and a valid 0x wallet are required");
+  const contact = b.contact ?? b.whatsapp;
+  if (!b.name || !contact || !EVM.test(b.wallet ?? "")) return err(c, 400, "shop name, a contact (phone, email or link) and a valid 0x payout wallet are required");
   let slug = slugify(b.name);
   if (await c.env.DB.prepare("SELECT 1 FROM stalls WHERE slug = ?").bind(slug).first()) slug = `${slug}-${rid(4)}`;
   const key = `sk_${rid(20)}`;
   const id = rid();
   await c.env.DB.prepare(
     "INSERT INTO stalls (id, slug, name, whatsapp, wallet, city, bio, edit_key_hash, created_at) VALUES (?,?,?,?,?,?,?,?,?)",
-  ).bind(id, slug, b.name, b.whatsapp, b.wallet.toLowerCase(), b.city ?? null, b.bio ?? null, await sha256(key), now()).run();
+  ).bind(id, slug, b.name, contact, b.wallet.toLowerCase(), b.city ?? null, b.bio ?? null, await sha256(key), now()).run();
   return c.json({ slug, edit_key: key, share_url: `${c.env.PUBLIC_URL}/s/${slug}` });
 });
 
@@ -147,7 +155,7 @@ app.get("/stalls/:slug", async (c) => {
   if (!s) return err(c, 404, "stall not found");
   const { results } = await c.env.DB.prepare("SELECT * FROM products WHERE stall_id = ? ORDER BY created_at DESC").bind(s.id).all();
   return c.json({
-    stall: { slug: s.slug, name: s.name, city: s.city ?? "", bio: s.bio ?? "", whatsapp_link: waLink(s.whatsapp, `Hi ${s.name}!`) },
+    stall: { slug: s.slug, name: s.name, city: s.city ?? "", bio: s.bio ?? "", contact_link: contactLink(s.whatsapp, `Hi ${s.name}!`) },
     products: results.map((p) => publicProduct(p)),
   });
 });
@@ -217,7 +225,7 @@ app.post("/orders/:id/confirm", async (c) => {
   return c.json({
     order_id: o.id, status: o.status, product: o.title, amount_usdc: atomicToUsd(o.amount_atomic),
     tx_hash: o.tx_hash ?? "", receipt_url: o.tx_hash ? `https://basescan.org/tx/${o.tx_hash}` : "",
-    message_seller_url: waLink(s.whatsapp, msg),
+    message_seller_url: contactLink(s.whatsapp, msg),
   });
 });
 
@@ -270,8 +278,8 @@ header{padding:28px 20px;background:linear-gradient(135deg,#7c3aed,#db2777)}h1{m
 .b{padding:12px 14px}h3{margin:0 0 4px;font-size:16px}.b p{margin:0 0 10px;color:#a8a8b8;font-size:13px}.row{display:flex;justify-content:space-between;align-items:center}
 code{display:block;margin-top:8px;color:#8b8ba0;font-size:11px}a.wa{display:inline-block;margin-top:12px;padding:8px 14px;border-radius:999px;background:#25d366;color:#04230f;text-decoration:none;font-weight:600}
 </style></head><body><header><h1>${esc(s.name)}</h1><p>${esc(s.bio ?? "")}${s.city ? ` · 📍 ${esc(s.city)}` : ""}</p>
-<a class="wa" href="${waLink(s.whatsapp, `Hi ${s.name}!`)}">Chat on WhatsApp</a></header>
-<div class="ask">🤖 <b>Shop with your AI.</b> In Claude or ChatGPT with PayBox connected, say:<br><i>"Buy the ${esc((results[0] as any)?.title ?? "item")} from the ${esc(s.slug)} stall on Stall"</i>, approve with your passkey, done. Paid in USDC on Base straight to the seller.</div>
+${contactLink(s.whatsapp, `Hi ${s.name}!`) ? `<a class="wa" href="${esc(contactLink(s.whatsapp, `Hi ${s.name}!`))}">Message the seller</a>` : ""}</header>
+<div class="ask">🤖 <b>Buy with your AI assistant.</b> In Claude or ChatGPT with PayBox connected, just say:<br><i>"Buy the ${esc((results[0] as any)?.title ?? "item")} from ${esc(s.name)} on Stall"</i>. Approve with one tap and you're done. You pay in digital dollars (USDC), straight to the seller.</div>
 <div class="grid">${cards || "<p>No products yet.</p>"}</div></body></html>`);
 });
 

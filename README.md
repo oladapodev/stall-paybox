@@ -1,47 +1,47 @@
 # Stall 🛍️
 
-**Make every WhatsApp and Instagram seller shoppable by AI agents.**
+**Let anyone who sells things be found and paid by AI assistants.**
 
 A PayBox plugin for the MoonPay Hackathon (Chapter 1).
 
-Shopify made 2M Shopify stores agent-ready. The millions of informal sellers who run their business on WhatsApp and Instagram (the fabric seller in Lagos, the sneaker plug, the home baker) have no website and are invisible to AI shoppers. Stall fixes that.
+People are starting to shop by asking Claude or ChatGPT. Big stores are getting ready for that. Small sellers are not: the candle maker, the ceramics studio, the market trader, the side hustle with no website. Stall gives every one of them a shop that AI assistants can search and pay, in a single chat message.
 
-- **Sellers** open a stall by chatting with their agent: name, WhatsApp number, payout wallet. Add products in plain language. Get a share link for their bio.
-- **Buyers** tell Claude or ChatGPT "find me Ankara fabric under $20". Their agent searches stalls, picks one, and PayBox asks for one passkey tap. USDC goes **straight to the seller's wallet on Base**. No middleman, no custody.
-- **Price watch**: "tell me when anything matching 'sneakers' drops under $40". When the seller cuts the price, the watch triggers and the buy is one tap away.
-- After paying, the buyer gets a Basescan receipt and a pre-filled **WhatsApp message** to the seller with order details and delivery note.
+- **Sellers** open a shop by chatting: shop name, how to contact them (phone, email or link) and where to get paid. Add items in plain words. Share the shop link anywhere.
+- **Buyers** say "find me a handmade mug under $20". Their assistant searches every shop, and PayBox asks for one tap to approve. The money (USDC, digital dollars on Base) goes **straight to the seller**. No middleman, nobody holds the money.
+- **Price drop alerts**: "tell me when a leather wallet is under $40". When a seller lowers the price, the buyer is one tap from buying.
+- After paying, the buyer gets a receipt and a ready-to-send message to the seller with the order details.
 
 ## How it works
 
 ```
-Seller (WhatsApp/IG) --chat--> agent --create_stall/add_product--> Stall API
-Buyer  (Claude/ChatGPT) --search_stalls/buy_product--> Stall API
-buy_product --> io.paybox/transactionProposal (USDC transfer on Base) --> PayBox passkey approval --> seller wallet
-confirm_order --> Stall API verifies the USDC Transfer log on Base --> receipt + wa.me link to seller
+Seller --chat--> AI assistant --open_shop / add_item--> Stall API
+Buyer  --chat--> AI assistant --find_items / buy_item--> Stall API
+buy_item --> payment proposal (USDC transfer on Base) --> PayBox one-tap approval --> seller's wallet
+confirm_payment --> Stall API checks the payment on Base --> receipt + message to seller
 ```
 
-Each order gets a **unique amount** (price plus a sub-cent tag, e.g. 14.003949 USDC), so a plain ERC-20 transfer identifies the order on-chain. No custom contract, one transaction, one approval.
+Each order gets a **unique amount** (the price plus a tiny fraction of a cent, e.g. 0.500137), so a normal USDC transfer identifies the order. No custom contract, one payment, one approval.
 
 ## Tools
 
-| Tool | Who | What |
+| Tool | Who | What it does |
 |---|---|---|
-| `create_stall` | seller | Open a stall, get share link + private edit key |
-| `add_product` / `update_product` | seller | List items, change price or stock (price drops hit watches) |
-| `stall_orders` | seller | Orders with paid status, delivery notes, tx hashes |
-| `search_stalls` / `view_stall` | buyer | Find products across stalls, cheapest first |
-| `buy_product` | buyer | Create order + propose USDC payment on Base to the seller |
-| `confirm_order` | buyer | Verify on-chain, receipt, WhatsApp message to seller |
-| `watch_price` / `check_watch` | buyer | Price-drop alerts that turn into one-tap buys |
+| `open_shop` | seller | Open a shop, get a share link and a private shop key |
+| `add_item` / `update_item` | seller | List items, change price or stock (lower prices alert waiting buyers) |
+| `my_orders` | seller | Orders, paid status, delivery details, receipts |
+| `find_items` / `view_shop` | buyer | Search all shops, cheapest first |
+| `buy_item` | buyer | Place the order and prepare the payment to the seller |
+| `confirm_payment` | buyer | Check the payment arrived, receipt, message the seller |
+| `watch_price` / `check_watch` | buyer | Price drop alerts that turn into one-tap buys |
 
 ## Repo
 
 - `plugin/` PayBox plugin (official starter 1.0.2, MCP server bundled to `dist/plugin.mjs`)
-- `api/` Stall API: Hono on Cloudflare Workers + D1. Verifies USDC payments via Base RPC.
+- `api/` Stall API: Hono on Cloudflare Workers + D1, checks USDC payments on Base
 
 ```bash
 cd plugin && pnpm install --frozen-lockfile && pnpm test   # conformance
 cd api && npx wrangler deploy                              # API
 ```
 
-Hosted network host to allow in the PayBox portal: `stall-api.oladapo.workers.dev`
+Network host to allow in the PayBox portal: `stall-api.oladapo.workers.dev`
