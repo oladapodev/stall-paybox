@@ -1,0 +1,17 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "stall-api",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-01",
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "stall-db",
+      "database_id": "d7c81315-a179-4cd7-a48c-3461e0ed4a33"
+    }
+  ],
+  "vars": {
+    "BASE_RPC": "https://base-rpc.publicnode.com",
+    "PUBLIC_URL": "https://stall-api.oladapo.workers.dev"
+  }
+}
