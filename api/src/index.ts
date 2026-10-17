@@ -34,7 +34,7 @@ const contactLink = (contact: string, text: string) => {
 };
 const err = (c: any, status: number, message: string) => c.json({ error: message }, status);
 
-const RPCS = ["https://base-rpc.publicnode.com", "https://mainnet.base.org", "https://base.drpc.org"];
+const RPCS = ["https://base-rpc.publicnode.com", "https://base.drpc.org", "https://mainnet.base.org", "https://base.gateway.tenderly.co"];
 async function rpc(env: Env, method: string, params: unknown[]) {
   let last = "rpc unavailable";
   for (const url of [env.BASE_RPC, ...RPCS.filter((u) => u !== env.BASE_RPC)]) {
@@ -194,11 +194,12 @@ async function findPayment(env: Env, o: any, wallet: string, txHash?: string) {
     return null;
   }
   const latest = Number(BigInt(await rpc(env, "eth_blockNumber", [])));
-  const from = Math.max(o.start_block || latest - 1800, latest - 5000);
-  for (let start = from; start <= latest; start += 2000) {
+  // Orders are recent: only scan from when the order was created (Base makes ~1 block / 2s).
+  const from = Math.max(o.start_block ? o.start_block - 5 : latest - 900, latest - 3000);
+  for (let start = from; start <= latest; start += 500) {
     const logs = await rpc(env, "eth_getLogs", [{
       address: USDC_BASE, topics: [TRANSFER_TOPIC, null, toTopic],
-      fromBlock: "0x" + start.toString(16), toBlock: "0x" + Math.min(latest, start + 1999).toString(16),
+      fromBlock: "0x" + start.toString(16), toBlock: "0x" + Math.min(latest, start + 499).toString(16),
     }]);
     const l = logs.find(match);
     if (l) return l.transactionHash as string;
@@ -213,7 +214,7 @@ app.post("/orders/:id/confirm", async (c) => {
   const s: any = await c.env.DB.prepare("SELECT * FROM stalls WHERE id = ?").bind(o.stall_id).first();
   if (o.status !== "paid") {
     let tx: string | null = null;
-    try { tx = await findPayment(c.env, o, s.wallet, b.tx_hash); } catch (e: any) { return err(c, 502, `could not reach Base: ${e.message}`); }
+    try { tx = await findPayment(c.env, o, s.wallet, b.tx_hash); } catch (e: any) { return err(c, 502, `could not check the payment right now, please try again in a few seconds (${e.message})`); }
     if (tx) {
       const upd = await c.env.DB.prepare("UPDATE orders SET status = 'paid', tx_hash = ?, paid_at = ? WHERE id = ? AND status != 'paid'").bind(tx, now(), o.id).run();
       if (upd.meta.changes) await c.env.DB.prepare("UPDATE products SET stock = MAX(0, stock - ?) WHERE id = ?").bind(o.qty, o.product_id).run();
