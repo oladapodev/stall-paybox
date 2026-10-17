@@ -1,6 +1,6 @@
 {
-  "tool": "echo",
+  "tool": "search_stalls",
   "arguments": {
-    "message": "hello paybox"
+    "query": "ankara"
   }
 }
