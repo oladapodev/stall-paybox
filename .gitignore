@@ -2,3 +2,4 @@ node_modules
 .wrangler
 dist
 .env*
+.demo-stall.env
