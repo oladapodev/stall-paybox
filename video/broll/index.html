@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      :root {
+        --bg: #f4ede3;
+        --bg-2: #ebe1d3;
+        --ink: #241b16;
+        --muted: #6e6058;
+        --accent: #d9542b;
+        --accent-soft: #f6d9cc;
+        --good: #1f7a4d;
+        --card: #fffaf4;
+        --line: #e0d4c4;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); }
+      #root {
+        position: relative; width: 1920px; height: 1080px; overflow: hidden;
+        background: var(--bg); color: var(--ink); font-family: Montserrat, sans-serif;
+      }
+      .clip { position: absolute; inset: 0; width: 100%; height: 100%; }
+      .glow {
+        position: absolute; width: 1100px; height: 1100px; border-radius: 50%;
+        background: radial-gradient(circle, rgba(217, 84, 43, 0.18), rgba(217, 84, 43, 0) 65%);
+        left: 50%; top: 50%; margin-left: -550px; margin-top: -550px;
+      }
+      .ghost {
+        position: absolute; left: 60px; bottom: 30px; font-family: "Archivo Black", sans-serif;
+        font-size: 300px; line-height: 1; color: var(--ink); opacity: 0.045; white-space: nowrap;
+      }
+      .center {
+        position: absolute; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; text-align: center; padding: 0 160px;
+      }
+      .eyebrow {
+        font-family: "Space Mono", monospace; font-size: 30px; letter-spacing: 0.08em;
+        text-transform: uppercase; color: var(--accent); margin-bottom: 28px;
+      }
+      .big { font-weight: 900; font-size: 150px; line-height: 1.02; letter-spacing: -0.03em; }
+      .mid { font-weight: 800; font-size: 92px; line-height: 1.08; letter-spacing: -0.02em; }
+      .sub { font-weight: 500; font-size: 44px; color: var(--muted); margin-top: 30px; max-width: 1300px; }
+      .word { display: inline-block; }
+      .accent { color: var(--accent); }
+
+      /* problem scene */
+      .shops { display: flex; gap: 40px; margin-top: 60px; }
+      .shop {
+        width: 300px; height: 230px; border-radius: 28px; background: var(--card);
+        border: 2px solid var(--line); display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 14px;
+      }
+      .shop .icon { font-size: 76px; line-height: 1; }
+      .shop .name { font-weight: 700; font-size: 30px; }
+      .shop .tag { font-family: "Space Mono", monospace; font-size: 22px; color: var(--muted); }
+
+      /* logo */
+      .logo { display: flex; align-items: center; gap: 34px; }
+      .logo-mark {
+        width: 170px; height: 170px; border-radius: 44px; background: var(--accent);
+        display: flex; align-items: center; justify-content: center; font-size: 96px;
+      }
+      .logo-word { font-weight: 900; font-size: 190px; letter-spacing: -0.04em; line-height: 1; }
+      .built {
+        margin-top: 46px; font-family: "Space Mono", monospace; font-size: 30px; color: var(--ink);
+        padding: 14px 30px; border: 2px solid var(--ink); border-radius: 999px;
+      }
+
+      /* chat window */
+      .stage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 70px; }
+      .side { width: 520px; }
+      .side .eyebrow { margin-bottom: 18px; }
+      .side h2 { font-weight: 900; font-size: 84px; line-height: 1.04; letter-spacing: -0.025em; }
+      .side p { font-weight: 500; font-size: 36px; color: var(--muted); margin-top: 26px; line-height: 1.3; }
+      .win {
+        position: relative; width: 1060px; height: 860px; border-radius: 36px; background: var(--card);
+        border: 2px solid var(--line); overflow: hidden;
+        box-shadow: 0 40px 90px rgba(80, 50, 30, 0.16);
+      }
+      .bar {
+        height: 92px; display: flex; align-items: center; justify-content: space-between;
+        padding: 0 36px; border-bottom: 2px solid var(--line); background: #fbf4ea;
+      }
+      .bar .title { font-weight: 700; font-size: 30px; }
+      .bar .title small { font-weight: 500; color: var(--muted); font-size: 24px; margin-left: 12px; }
+      .pill {
+        font-family: "Space Mono", monospace; font-size: 20px; padding: 8px 18px; border-radius: 999px;
+        background: #e3f1e8; color: var(--good); border: 2px solid #bfdcc9;
+      }
+      .msgs { padding: 36px; display: flex; flex-direction: column; gap: 22px; }
+      .b {
+        max-width: 760px; padding: 22px 30px; border-radius: 28px; font-size: 32px;
+        font-weight: 500; line-height: 1.35;
+      }
+      .me { align-self: flex-end; background: var(--ink); color: #fbf4ea; border-bottom-right-radius: 8px; }
+      .ai { align-self: flex-start; background: var(--bg-2); color: var(--ink); border-bottom-left-radius: 8px; }
+      .ai b { font-weight: 800; }
+      .mono { font-family: "Space Mono", monospace; font-size: 26px; color: var(--accent); }
+      .caret { display: inline-block; width: 3px; height: 34px; background: #fbf4ea; margin-left: 4px; vertical-align: -6px; }
+
+      .item {
+        align-self: flex-start; display: flex; align-items: center; gap: 24px; width: 620px;
+        padding: 20px 24px; border-radius: 24px; background: #fff; border: 2px solid var(--line);
+      }
+      .item .thumb {
+        width: 96px; height: 96px; border-radius: 20px; background: var(--accent-soft);
+        display: flex; align-items: center; justify-content: center; font-size: 52px;
+      }
+      .item .t { font-weight: 700; font-size: 30px; }
+      .item .s { font-weight: 500; font-size: 24px; color: var(--muted); margin-top: 4px; }
+      .item .p { margin-left: auto; font-family: "Space Mono", monospace; font-size: 34px; font-weight: 700; }
+      .item.pick { border-color: var(--accent); }
+
+      /* paybox sheet */
+      .sheet {
+        position: absolute; left: 0; right: 0; bottom: 0; padding: 40px 48px 48px;
+        background: #fff; border-top: 2px solid var(--line); border-radius: 36px 36px 0 0;
+        box-shadow: 0 -30px 60px rgba(80, 50, 30, 0.14);
+      }
+      .sheet .brand { font-weight: 800; font-size: 26px; display: flex; align-items: center; gap: 12px; }
+      .sheet .brand i {
+        width: 34px; height: 34px; border-radius: 10px; background: var(--ink); display: inline-block;
+      }
+      .sheet .amt { font-family: "Space Mono", monospace; font-size: 72px; font-weight: 700; margin-top: 18px; }
+      .sheet .to { font-size: 30px; font-weight: 500; color: var(--muted); margin-top: 6px; }
+      .approve {
+        margin-top: 30px; height: 96px; border-radius: 24px; background: var(--accent); color: #fff;
+        display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 36px;
+      }
+      .done {
+        position: absolute; inset: 0; background: #fff; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 16px;
+      }
+      .done .tick {
+        width: 150px; height: 150px; border-radius: 50%; background: var(--good); color: #fff;
+        font-size: 90px; display: flex; align-items: center; justify-content: center; font-weight: 900;
+      }
+      .done h3 { font-weight: 900; font-size: 64px; }
+      .done p { font-weight: 500; font-size: 32px; color: var(--muted); }
+      .done .receipt { font-family: "Space Mono", monospace; font-size: 26px; color: var(--accent); }
+
+      .cursor { position: absolute; left: 0; top: 0; width: 56px; height: 56px; }
+      .ripple {
+        position: absolute; width: 120px; height: 120px; border-radius: 50%;
+        border: 6px solid var(--accent); left: 0; top: 0;
+      }
+
+      .notif {
+        align-self: center; width: 820px; display: flex; align-items: center; gap: 26px;
+        padding: 26px 30px; border-radius: 28px; background: var(--ink); color: #fbf4ea;
+      }
+      .notif .bell {
+        width: 84px; height: 84px; border-radius: 22px; background: var(--accent);
+        display: flex; align-items: center; justify-content: center; font-size: 46px; flex-shrink: 0;
+      }
+      .notif .t { font-weight: 800; font-size: 32px; }
+      .notif .s { font-weight: 500; font-size: 28px; opacity: 0.85; margin-top: 4px; }
+      .old { text-decoration: line-through; opacity: 0.6; margin-right: 10px; }
+      .chip {
+        align-self: flex-start; padding: 16px 30px; border-radius: 999px; background: var(--accent);
+        color: #fff; font-weight: 800; font-size: 30px;
+      }
+      .url { margin-top: 40px; font-family: "Space Mono", monospace; font-size: 28px; color: var(--muted); }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-width="1920" data-height="1080" data-duration="49">
+
+      <!-- S1 Hook 0-4 -->
+      <section id="s1" class="clip" data-start="0" data-duration="4" data-track-index="0">
+        <div class="glow" id="s1-glow"></div>
+        <div class="ghost" id="s1-ghost">SHOP · ASK · BUY</div>
+        <div class="center">
+          <div class="eyebrow" id="s1-eye">People now shop by asking AI</div>
+          <div class="big"><span class="word s1w">Can</span> <span class="word s1w">AI</span> <span class="word s1w">buy</span> <span class="word s1w accent">from&nbsp;you?</span></div>
+        </div>
+      </section>
+
+      <!-- S2 Problem 4-9 -->
+      <section id="s2" class="clip" data-start="4" data-duration="5" data-track-index="0">
+        <div class="ghost" id="s2-ghost">NO WEBSITE</div>
+        <div class="center">
+          <div class="mid">Small sellers get <span class="accent">skipped.</span></div>
+          <div class="shops">
+            <div class="shop s2shop"><div class="icon">🕯️</div><div class="name">Candle maker</div><div class="tag">no website</div></div>
+            <div class="shop s2shop"><div class="icon">🏺</div><div class="name">Ceramics studio</div><div class="tag">no checkout</div></div>
+            <div class="shop s2shop"><div class="icon">🥖</div><div class="name">Home bakery</div><div class="tag">no website</div></div>
+            <div class="shop s2shop"><div class="icon">👜</div><div class="name">Leather goods</div><div class="tag">no checkout</div></div>
+          </div>
+          <div class="sub" id="s2-sub">AI can't find them, and it can't pay them.</div>
+        </div>
+      </section>
+
+      <!-- S3 Logo 9-13 -->
+      <section id="s3" class="clip" data-start="9" data-duration="4" data-track-index="0">
+        <div class="glow" id="s3-glow"></div>
+        <div class="center">
+          <div class="logo"><div class="logo-mark" id="s3-mark">🛍️</div><div class="logo-word" id="s3-word">Stall</div></div>
+          <div class="sub" id="s3-sub">Open a shop that AI can find and pay. Just by chatting.</div>
+          <div class="built" id="s3-built">a plugin for PayBox</div>
+        </div>
+      </section>
+
+      <!-- S4 Seller 13-24 -->
+      <section id="s4" class="clip" data-start="13" data-duration="11" data-track-index="0">
+        <div class="stage">
+          <div class="side">
+            <div class="eyebrow">The seller</div>
+            <h2>Open a shop by chatting.</h2>
+            <p>No website. No code. Just say what you sell.</p>
+          </div>
+          <div class="win">
+            <div class="bar"><div class="title">AI assistant<small>ChatGPT · Claude</small></div><div class="pill">● Stall on</div></div>
+            <div class="msgs">
+              <div class="b me" id="s4-m1"><span id="s4-t1"></span><span class="caret" id="s4-c1"></span></div>
+              <div class="b ai" id="s4-a1">Your shop <b>Green Leaf Candles</b> is open ✓<br /><span class="mono">stall.shop/green-leaf-candles</span></div>
+              <div class="b me" id="s4-m2"><span id="s4-t2"></span><span class="caret" id="s4-c2"></span></div>
+              <div class="b ai" id="s4-a2">Added. Buyers can find it now.</div>
+              <div class="item" id="s4-item">
+                <div class="thumb">🕯️</div>
+                <div><div class="t">Lavender candle</div><div class="s">20 available · Green Leaf Candles</div></div>
+                <div class="p">$12</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S5 Buyer 24-37 -->
+      <section id="s5" class="clip" data-start="24" data-duration="13" data-track-index="0">
+        <div class="stage">
+          <div class="side">
+            <div class="eyebrow">The buyer</div>
+            <h2>Ask. Tap. Paid.</h2>
+            <p>The money goes straight to the seller. No middleman.</p>
+          </div>
+          <div class="win" id="s5-win">
+            <div class="bar"><div class="title">AI assistant<small>ChatGPT · Claude</small></div><div class="pill">● PayBox connected</div></div>
+            <div class="msgs" id="s5-msgs">
+              <div class="b me" id="s5-m1"><span id="s5-t1"></span><span class="caret" id="s5-c1"></span></div>
+              <div class="b ai" id="s5-a1">I found 2 candles from small shops:</div>
+              <div class="item pick" id="s5-i1">
+                <div class="thumb">🕯️</div>
+                <div><div class="t">Lavender candle</div><div class="s">Green Leaf Candles · Austin</div></div>
+                <div class="p">$12</div>
+              </div>
+              <div class="item" id="s5-i2">
+                <div class="thumb">🌲</div>
+                <div><div class="t">Cedar candle</div><div class="s">Green Leaf Candles · Austin</div></div>
+                <div class="p">$14</div>
+              </div>
+              <div class="b me" id="s5-m2"><span id="s5-t2"></span><span class="caret" id="s5-c2"></span></div>
+            </div>
+            <div class="sheet" id="s5-sheet" data-layout-allow-occlusion>
+              <div class="brand"><i></i>PayBox · approve payment</div>
+              <div class="amt">$12.00</div>
+              <div class="to">to Green Leaf Candles · Lavender candle</div>
+              <div class="approve" id="s5-btn">Approve with passkey</div>
+            </div>
+            <div class="done" id="s5-done" data-layout-allow-occlusion>
+              <div class="tick">✓</div>
+              <h3>Paid</h3>
+              <p>$12.00 sent straight to Green Leaf Candles</p>
+              <div class="receipt">receipt ready · seller notified</div>
+            </div>
+            <div class="ripple" id="s5-rip"></div>
+            <svg class="cursor" id="s5-cur" viewBox="0 0 24 24"><path d="M4 2 L4 19 L8.5 14.5 L11.5 21.5 L14.5 20.2 L11.6 13.3 L18 13.3 Z" fill="#241b16" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+      </section>
+
+      <!-- S6 Price drop 37-44 -->
+      <section id="s6" class="clip" data-start="37" data-duration="7" data-track-index="0">
+        <div class="stage">
+          <div class="side">
+            <div class="eyebrow">Price drop alerts</div>
+            <h2>"Tell me when it's cheaper."</h2>
+            <p>When the seller lowers the price, you're one tap away.</p>
+          </div>
+          <div class="win">
+            <div class="bar"><div class="title">AI assistant<small>ChatGPT · Claude</small></div><div class="pill">● Stall on</div></div>
+            <div class="msgs">
+              <div class="b me" id="s6-m1"><span id="s6-t1"></span><span class="caret" id="s6-c1"></span></div>
+              <div class="b ai" id="s6-a1">Got it. I'll watch the cedar candle for you.</div>
+              <div class="notif" id="s6-n">
+                <div class="bell">🔔</div>
+                <div><div class="t">Good news! The price dropped</div><div class="s">Cedar candle <span class="old">$14</span><b>$9</b></div></div>
+              </div>
+              <div class="chip" id="s6-chip">Buy it for $9</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- S7 End 44-49 -->
+      <section id="s7" class="clip" data-start="44" data-duration="5" data-track-index="0">
+        <div class="glow" id="s7-glow"></div>
+        <div class="center">
+          <div class="logo"><div class="logo-mark" id="s7-mark">🛍️</div><div class="logo-word" id="s7-word">Stall</div></div>
+          <div class="mid" id="s7-line" style="margin-top: 50px">Any seller. Anywhere. <span class="accent">Shoppable by AI.</span></div>
+          <div class="built" id="s7-built">Built on PayBox · MoonPay Hackathon</div>
+          <div class="url" id="s7-url">github.com/oladapodev/stall-paybox</div>
+        </div>
+      </section>
+    </div>
+
+    <script>
+      const tl = gsap.timeline({ paused: true });
+
+      // Typing helper: seek-safe, text is a pure function of tween progress.
+      function type(textSel, caretSel, text, at, dur) {
+        const el = document.querySelector(textSel);
+        const p = { n: 0 };
+        tl.to(p, {
+          n: text.length, duration: dur, ease: "none",
+          onUpdate: () => { el.textContent = text.slice(0, Math.round(p.n)); },
+        }, at);
+        tl.set(caretSel, { autoAlpha: 0 }, at + dur + 0.25);
+      }
+      function bubble(sel, at) {
+        tl.fromTo(sel, { autoAlpha: 0, y: 26, scale: 0.96 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.45, ease: "back.out(1.6)" }, at);
+      }
+      function ambient(sel, start, dur) {
+        tl.fromTo(sel, { scale: 0.92 }, { scale: 1.08, duration: dur, ease: "sine.inOut" }, start);
+      }
+
+      // hide everything that arrives later
+      gsap.set(["#s4-m1","#s4-a1","#s4-m2","#s4-a2","#s4-item","#s5-m1","#s5-a1","#s5-i1","#s5-i2","#s5-m2","#s6-m1","#s6-a1","#s6-n","#s6-chip","#s5-done","#s5-rip"], { autoAlpha: 0 });
+      gsap.set("#s5-sheet", { yPercent: 105 });
+      gsap.set("#s5-cur", { x: 860, y: 900, autoAlpha: 0 });
+
+      // S1 hook
+      ambient("#s1-glow", 0, 4);
+      tl.fromTo("#s1-ghost", { x: 0 }, { x: -160, duration: 4, ease: "none" }, 0);
+      tl.from("#s1-eye", { autoAlpha: 0, y: 20, duration: 0.5, ease: "power3.out" }, 0.2);
+      tl.from(".s1w", { autoAlpha: 0, y: 90, rotate: 3, duration: 0.55, ease: "power4.out", stagger: 0.16 }, 0.55);
+      tl.to(".s1w.accent", { scale: 1.06, duration: 0.25, yoyo: true, repeat: 1, ease: "power2.out" }, 1.9);
+
+      // S2 problem
+      tl.fromTo("#s2-ghost", { x: 0 }, { x: -140, duration: 5, ease: "none" }, 4);
+      tl.from("#s2 .mid", { autoAlpha: 0, y: 40, duration: 0.5, ease: "power3.out" }, 4.15);
+      tl.from(".s2shop", { autoAlpha: 0, y: 60, duration: 0.45, ease: "back.out(1.5)", stagger: 0.12 }, 4.5);
+      tl.to(".s2shop", { filter: "grayscale(1)", opacity: 0.38, duration: 0.6, ease: "power2.inOut", stagger: 0.1 }, 6.0);
+      tl.from("#s2-sub", { autoAlpha: 0, y: 24, duration: 0.5, ease: "power3.out" }, 6.6);
+
+      // S3 logo
+      ambient("#s3-glow", 9, 4);
+      tl.from("#s3-mark", { scale: 0, rotate: -25, duration: 0.6, ease: "back.out(2)" }, 9.15);
+      tl.from("#s3-word", { autoAlpha: 0, x: -50, duration: 0.55, ease: "power4.out" }, 9.4);
+      tl.from("#s3-sub", { autoAlpha: 0, y: 24, duration: 0.5, ease: "power3.out" }, 10.0);
+      tl.from("#s3-built", { autoAlpha: 0, scale: 0.85, duration: 0.45, ease: "back.out(1.8)" }, 10.6);
+
+      // S4 seller
+      tl.from("#s4 .side > *", { autoAlpha: 0, x: -40, duration: 0.5, ease: "power3.out", stagger: 0.12 }, 13.1);
+      tl.from("#s4 .win", { autoAlpha: 0, y: 60, scale: 0.96, duration: 0.6, ease: "power3.out" }, 13.2);
+      bubble("#s4-m1", 13.9);
+      type("#s4-t1", "#s4-c1", "Open a shop called Green Leaf Candles", 14.0, 1.8);
+      bubble("#s4-a1", 16.3);
+      bubble("#s4-m2", 17.8);
+      type("#s4-t2", "#s4-c2", "Add a lavender candle, $12, 20 in stock", 17.9, 1.9);
+      bubble("#s4-a2", 20.3);
+      tl.fromTo("#s4-item", { autoAlpha: 0, scale: 0.7 }, { autoAlpha: 1, scale: 1, duration: 0.55, ease: "back.out(2)" }, 20.8);
+
+      // S5 buyer
+      tl.from("#s5 .side > *", { autoAlpha: 0, x: -40, duration: 0.5, ease: "power3.out", stagger: 0.12 }, 24.1);
+      tl.from("#s5-win", { autoAlpha: 0, y: 60, scale: 0.96, duration: 0.6, ease: "power3.out" }, 24.2);
+      bubble("#s5-m1", 24.9);
+      type("#s5-t1", "#s5-c1", "Find me a scented candle under $15", 25.0, 1.7);
+      bubble("#s5-a1", 27.1);
+      tl.fromTo(["#s5-i1","#s5-i2"], { autoAlpha: 0, x: -40 }, { autoAlpha: 1, x: 0, duration: 0.45, ease: "power3.out", stagger: 0.18 }, 27.5);
+      bubble("#s5-m2", 28.7);
+      type("#s5-t2", "#s5-c2", "Buy the lavender one", 28.8, 1.0);
+      tl.to("#s5-msgs", { autoAlpha: 0, y: -40, duration: 0.4, ease: "power2.in" }, 30.1);
+      tl.to("#s5-sheet", { yPercent: 0, duration: 0.6, ease: "power4.out" }, 30.2);
+      tl.to("#s5-cur", { autoAlpha: 1, duration: 0.2 }, 30.6);
+      tl.to("#s5-cur", { x: 530, y: 770, duration: 0.9, ease: "power3.inOut" }, 30.7);
+      tl.to(["#s5-cur","#s5-btn"], { scale: 0.92, duration: 0.12, ease: "power2.in" }, 31.7);
+      tl.to(["#s5-cur","#s5-btn"], { scale: 1, duration: 0.25, ease: "back.out(3)" }, 31.82);
+      tl.set("#s5-rip", { x: 470, y: 715, scale: 0.3 }, 31.72);
+      tl.to("#s5-rip", { autoAlpha: 1, duration: 0.08 }, 31.72);
+      tl.to("#s5-rip", { scale: 1.6, autoAlpha: 0, duration: 0.6, ease: "power2.out" }, 31.8);
+      tl.to("#s5-cur", { autoAlpha: 0, duration: 0.2 }, 32.3);
+      tl.fromTo("#s5-done", { autoAlpha: 0 }, { autoAlpha: 1, duration: 0.35, ease: "power2.out" }, 32.5);
+      tl.to("#s5-sheet", { autoAlpha: 0, duration: 0.2 }, 32.85);
+      tl.from("#s5-done .tick", { scale: 0, rotate: -40, duration: 0.6, ease: "back.out(2.2)" }, 32.6);
+      tl.from(["#s5-done h3","#s5-done p","#s5-done .receipt"], { autoAlpha: 0, y: 24, duration: 0.45, ease: "power3.out", stagger: 0.15 }, 33.0);
+
+      // S6 price drop
+      tl.from("#s6 .side > *", { autoAlpha: 0, x: -40, duration: 0.5, ease: "power3.out", stagger: 0.12 }, 37.1);
+      tl.from("#s6 .win", { autoAlpha: 0, y: 60, scale: 0.96, duration: 0.6, ease: "power3.out" }, 37.2);
+      bubble("#s6-m1", 37.9);
+      type("#s6-t1", "#s6-c1", "Tell me when the cedar candle is under $10", 38.0, 1.8);
+      bubble("#s6-a1", 40.1);
+      tl.fromTo("#s6-n", { autoAlpha: 0, y: -40, scale: 0.9 }, { autoAlpha: 1, y: 0, scale: 1, duration: 0.55, ease: "back.out(2)" }, 41.3);
+      tl.fromTo("#s6-n .bell", { rotate: -18 }, { rotate: 18, duration: 0.12, yoyo: true, repeat: 5, ease: "sine.inOut" }, 41.5);
+      tl.fromTo("#s6-chip", { autoAlpha: 0, scale: 0.6 }, { autoAlpha: 1, scale: 1, duration: 0.45, ease: "back.out(2.2)" }, 42.4);
+
+      // S7 end
+      ambient("#s7-glow", 44, 5);
+      tl.from("#s7-mark", { scale: 0, rotate: -25, duration: 0.6, ease: "back.out(2)" }, 44.15);
+      tl.from("#s7-word", { autoAlpha: 0, x: -50, duration: 0.55, ease: "power4.out" }, 44.4);
+      tl.from("#s7-line", { autoAlpha: 0, y: 30, duration: 0.55, ease: "power3.out" }, 45.0);
+      tl.from("#s7-built", { autoAlpha: 0, scale: 0.85, duration: 0.45, ease: "back.out(1.8)" }, 45.6);
+      tl.from("#s7-url", { autoAlpha: 0, duration: 0.5, ease: "power2.out" }, 46.0);
+
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>

@@ -1,0 +1,10 @@
+# b-roll clip  start-in-your-video (seconds)
+# These defaults match SCRIPT.md if you read at a normal pace with 2s pauses.
+# After you send the take, I'll retime these to your real words.
+01-hook.mp4      1.0
+02-problem.mp4   10.0
+03-logo.mp4      19.0
+04-seller.mp4    25.0
+05-buyer.mp4     39.0
+06-price-drop.mp4 56.0
+07-end.mp4       68.0
